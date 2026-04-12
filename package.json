@@ -1,0 +1,16 @@
+{
+  "name": "viralscribe",
+  "version": "1.0.0",
+  "description": "AI-powered content generator for YouTube and Instagram",
+  "scripts": {
+    "dev": "netlify dev",
+    "deploy": "netlify deploy --prod"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "netlify-cli": "^17.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

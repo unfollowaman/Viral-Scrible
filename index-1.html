@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ViralScribe — AI Content Engine</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ONBOARDING MODAL -->
+  <div id="onboarding-overlay" class="overlay hidden">
+    <div class="modal" id="onboarding-modal">
+      <div class="modal-glyph">◈</div>
+      <h2 class="modal-title">What do you create?</h2>
+      <p class="modal-sub">Select all that apply. This helps ViralScribe tailor every output to your niche.</p>
+      <div class="niche-grid" id="niche-grid">
+        <button class="niche-btn" data-niche="Education">📚 Education</button>
+        <button class="niche-btn" data-niche="Fitness">💪 Fitness</button>
+        <button class="niche-btn" data-niche="Finance">📈 Finance</button>
+        <button class="niche-btn" data-niche="Entertainment">🎭 Entertainment</button>
+        <button class="niche-btn" data-niche="Tech">⚙️ Tech</button>
+        <button class="niche-btn" data-niche="Lifestyle">✨ Lifestyle</button>
+        <button class="niche-btn" data-niche="Gaming">🎮 Gaming</button>
+        <button class="niche-btn" data-niche="Food">🍜 Food</button>
+        <button class="niche-btn" data-niche="Travel">🌍 Travel</button>
+        <button class="niche-btn" data-niche="Beauty">💄 Beauty</button>
+        <button class="niche-btn" data-niche="Business">💼 Business</button>
+        <button class="niche-btn" data-niche="Music">🎵 Music</button>
+      </div>
+      <button class="cta-btn" id="onboarding-confirm">Continue →</button>
+    </div>
+  </div>
+
+  <!-- HEADER -->
+  <header class="site-header">
+    <div class="header-inner">
+      <!-- LOGO SLOT: Replace the div below with your <img> tag when ready -->
+      <div class="logo-slot" id="logo-slot">
+        <span class="logo-text">ViralScribe</span>
+        <span class="logo-tag">AI</span>
+      </div>
+
+      <nav class="tab-nav" id="tab-nav">
+        <button class="tab-btn active" data-tab="youtube">
+          <span class="tab-icon">▶</span> YouTube
+        </button>
+        <button class="tab-btn" data-tab="instagram">
+          <span class="tab-icon">◉</span> Instagram
+        </button>
+        <button class="tab-btn" data-tab="posting-time">
+          <span class="tab-icon">◷</span> Best Time
+        </button>
+      </nav>
+
+      <button class="profile-btn" id="profile-btn" title="Edit your niche profile">
+        <span class="profile-icon">⊕</span>
+        <span class="profile-label" id="profile-label">Profile</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- PROFILE PANEL -->
+  <div class="profile-panel hidden" id="profile-panel">
+    <div class="profile-panel-inner">
+      <p class="profile-panel-title">Your Niches</p>
+      <div class="profile-tags" id="profile-tags"></div>
+      <button class="edit-profile-btn" id="edit-profile-btn">Edit Profile</button>
+    </div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+
+    <!-- ─── YOUTUBE TAB ─── -->
+    <section class="tab-section active" id="tab-youtube">
+      <div class="section-header">
+        <h1 class="section-title">YouTube <span class="accent">Description & Tags</span></h1>
+        <p class="section-sub">Paste a short video description and get an SEO-optimized description, tags, and hashtags — ready to publish.</p>
+      </div>
+
+      <div class="form-card">
+        <div class="form-group">
+          <label class="form-label">Video Description <span class="required">*</span></label>
+          <textarea class="form-textarea" id="yt-description" placeholder="e.g. A tutorial on how to use Notion AI for productivity in 2025..." rows="4"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tone</label>
+          <div class="tone-selector" id="yt-tone-selector">
+            <button class="tone-btn active" data-tone="conversational">Conversational</button>
+            <button class="tone-btn" data-tone="professional">Professional</button>
+            <button class="tone-btn" data-tone="funny">Funny</button>
+            <button class="tone-btn" data-tone="emotional">Emotional</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Keywords <span class="optional">(optional)</span></label>
+          <input class="form-input" id="yt-keywords" type="text" placeholder="e.g. notion ai, productivity 2025, workflow" />
+        </div>
+        <button class="cta-btn generate-btn" id="yt-generate-btn">Generate →</button>
+      </div>
+
+      <!-- SKELETON -->
+      <div class="skeleton-wrapper hidden" id="yt-skeleton">
+        <div class="skeleton-card">
+          <div class="skeleton-line w60"></div>
+          <div class="skeleton-block"></div>
+        </div>
+        <div class="skeleton-card">
+          <div class="skeleton-line w40"></div>
+          <div class="skeleton-block short"></div>
+        </div>
+        <div class="skeleton-card">
+          <div class="skeleton-line w50"></div>
+          <div class="skeleton-block short"></div>
+        </div>
+      </div>
+
+      <!-- OUTPUT -->
+      <div class="output-grid hidden" id="yt-output">
+        <div class="output-card">
+          <div class="output-card-header">
+            <span class="output-label">Description</span>
+            <span class="char-count" id="yt-desc-count">0 / 5000</span>
+          </div>
+          <div class="output-text" id="yt-desc-text" contenteditable="false"></div>
+          <button class="copy-btn" data-target="yt-desc-text">Copy Description</button>
+        </div>
+        <div class="output-card">
+          <div class="output-card-header">
+            <span class="output-label">Tags</span>
+            <span class="char-count" id="yt-tags-count">0 / 500</span>
+          </div>
+          <div class="output-text" id="yt-tags-text" contenteditable="false"></div>
+          <button class="copy-btn" data-target="yt-tags-text">Copy Tags</button>
+        </div>
+        <div class="output-card">
+          <div class="output-card-header">
+            <span class="output-label">Hashtags</span>
+          </div>
+          <div class="output-text" id="yt-hashtags-text" contenteditable="false"></div>
+          <button class="copy-btn" data-target="yt-hashtags-text">Copy Hashtags</button>
+        </div>
+        <button class="regen-btn" id="yt-regen-btn">↺ Regenerate</button>
+      </div>
+    </section>
+
+    <!-- ─── INSTAGRAM TAB ─── -->
+    <section class="tab-section hidden" id="tab-instagram">
+      <div class="section-header">
+        <h1 class="section-title">Instagram <span class="accent">Caption & Tags</span></h1>
+        <p class="section-sub">Describe your post and get an engagement-optimized caption, hashtags, and keywords in seconds.</p>
+      </div>
+
+      <div class="form-card">
+        <div class="form-group">
+          <label class="form-label">Post Description <span class="required">*</span></label>
+          <textarea class="form-textarea" id="ig-description" placeholder="e.g. A reel about my morning routine as a remote developer..." rows="4"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tone</label>
+          <div class="tone-selector" id="ig-tone-selector">
+            <button class="tone-btn active" data-tone="conversational">Conversational</button>
+            <button class="tone-btn" data-tone="professional">Professional</button>
+            <button class="tone-btn" data-tone="funny">Funny</button>
+            <button class="tone-btn" data-tone="emotional">Emotional</button>
+          </div>
+        </div>
+        <button class="cta-btn generate-btn" id="ig-generate-btn">Generate →</button>
+      </div>
+
+      <!-- SKELETON -->
+      <div class="skeleton-wrapper hidden" id="ig-skeleton">
+        <div class="skeleton-card">
+          <div class="skeleton-line w60"></div>
+          <div class="skeleton-block"></div>
+        </div>
+        <div class="skeleton-card">
+          <div class="skeleton-line w40"></div>
+          <div class="skeleton-block short"></div>
+        </div>
+        <div class="skeleton-card">
+          <div class="skeleton-line w50"></div>
+          <div class="skeleton-block short"></div>
+        </div>
+      </div>
+
+      <!-- OUTPUT -->
+      <div class="output-grid hidden" id="ig-output">
+        <div class="output-card">
+          <div class="output-card-header">
+            <span class="output-label">Caption</span>
+          </div>
+          <div class="output-text" id="ig-caption-text" contenteditable="false"></div>
+          <button class="copy-btn" data-target="ig-caption-text">Copy Caption</button>
+        </div>
+        <div class="output-card">
+          <div class="output-card-header">
+            <span class="output-label">Hashtags <span class="limit-tag">max 5</span></span>
+          </div>
+          <div class="output-text" id="ig-hashtags-text" contenteditable="false"></div>
+          <button class="copy-btn" data-target="ig-hashtags-text">Copy Hashtags</button>
+        </div>
+        <div class="output-card">
+          <div class="output-card-header">
+            <span class="output-label">Keywords</span>
+          </div>
+          <div class="output-text" id="ig-keywords-text" contenteditable="false"></div>
+          <button class="copy-btn" data-target="ig-keywords-text">Copy Keywords</button>
+        </div>
+        <button class="regen-btn" id="ig-regen-btn">↺ Regenerate</button>
+      </div>
+    </section>
+
+    <!-- ─── POSTING TIME TAB ─── -->
+    <section class="tab-section hidden" id="tab-posting-time">
+      <div class="section-header">
+        <h1 class="section-title">Ideal <span class="accent">Posting Time</span></h1>
+        <p class="section-sub">Get the best time slots to post on YouTube or Instagram based on your region and audience.</p>
+      </div>
+
+      <div class="form-card">
+        <div class="form-group">
+          <label class="form-label">Platform</label>
+          <div class="tone-selector" id="pt-platform-selector">
+            <button class="tone-btn active" data-platform="YouTube">▶ YouTube</button>
+            <button class="tone-btn" data-platform="Instagram">◉ Instagram</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Target Audience Region</label>
+          <select class="form-select" id="pt-region">
+            <option value="India">🇮🇳 India</option>
+            <option value="US-East">🇺🇸 US — East Coast</option>
+            <option value="US-West">🇺🇸 US — West Coast</option>
+            <option value="UK">🇬🇧 United Kingdom</option>
+            <option value="UAE">🇦🇪 UAE / Gulf</option>
+            <option value="Australia">🇦🇺 Australia</option>
+            <option value="Canada">🇨🇦 Canada</option>
+            <option value="Germany">🇩🇪 Germany</option>
+            <option value="Singapore">🇸🇬 Singapore</option>
+            <option value="Global">🌍 Global / Mixed</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Content Type <span class="optional">(optional)</span></label>
+          <input class="form-input" id="pt-content-type" type="text" placeholder="e.g. educational shorts, tech reviews, lifestyle vlogs" />
+        </div>
+        <button class="cta-btn generate-btn" id="pt-generate-btn">Analyse →</button>
+      </div>
+
+      <!-- SKELETON -->
+      <div class="skeleton-wrapper hidden" id="pt-skeleton">
+        <div class="skeleton-card">
+          <div class="skeleton-line w60"></div>
+          <div class="skeleton-block"></div>
+        </div>
+        <div class="skeleton-card">
+          <div class="skeleton-line w40"></div>
+          <div class="skeleton-block short"></div>
+        </div>
+      </div>
+
+      <!-- OUTPUT -->
+      <div class="output-grid hidden" id="pt-output">
+        <div class="output-card">
+          <div class="output-card-header">
+            <span class="output-label">Best Time Slots</span>
+          </div>
+          <div class="output-text" id="pt-slots-text" contenteditable="false"></div>
+          <button class="copy-btn" data-target="pt-slots-text">Copy Time Slots</button>
+        </div>
+        <div class="output-card">
+          <div class="output-card-header">
+            <span class="output-label">Strategy Notes</span>
+          </div>
+          <div class="output-text" id="pt-notes-text" contenteditable="false"></div>
+          <button class="copy-btn" data-target="pt-notes-text">Copy Notes</button>
+        </div>
+        <button class="regen-btn" id="pt-regen-btn">↺ Regenerate</button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- TOAST -->
+  <div class="toast hidden" id="toast">Copied!</div>
+
+  <script src="app.js"></script>
+</body>
+</html>
