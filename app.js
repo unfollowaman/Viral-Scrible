@@ -1,149 +1,147 @@
 /* ============================================================
-   VIRALSCRIBE — app.js
-   Frontend logic: onboarding, tabs, API calls, copy, toast
+   VIRALSCRIBE 2.0 — app.js
+   View router · Onboarding · API calls · Copy · Toast
    ============================================================ */
 
 'use strict';
 
 // ── STATE ──────────────────────────────────────────────────────
-const state = {
-  niches: [],
-  activeTab: 'youtube',
-  ytTone: 'conversational',
-  igTone: 'conversational',
+const S = {
+  niches:     [],
+  ytTone:     'Conversational',
+  igTone:     'Conversational',
   ptPlatform: 'YouTube',
-  lastYtPayload: null,
-  lastIgPayload: null,
-  lastPtPayload: null,
 };
+
+// ── VIEW ROUTER ────────────────────────────────────────────────
+function showView(name) {
+  document.querySelectorAll('.view').forEach(v => {
+    v.classList.remove('active');
+    v.classList.add('hidden');
+  });
+  const el = document.getElementById(`view-${name}`);
+  if (!el) return;
+  el.classList.remove('hidden');
+  el.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'instant' });
+}
+
+function initRouter() {
+  // Feature cards on home
+  document.querySelectorAll('.feature-card').forEach(card => {
+    card.addEventListener('click', () => showView(card.dataset.view));
+  });
+
+  // Back buttons
+  document.querySelectorAll('.back-btn').forEach(btn => {
+    btn.addEventListener('click', () => showView(btn.dataset.back));
+  });
+}
 
 // ── ONBOARDING ─────────────────────────────────────────────────
 function initOnboarding() {
   const saved = localStorage.getItem('vs_niches');
   if (saved) {
     try {
-      state.niches = JSON.parse(saved);
-      renderProfileTags();
+      S.niches = JSON.parse(saved);
+      renderNiches();
       return;
     } catch {
       localStorage.removeItem('vs_niches');
     }
   }
-  showOnboarding();
+  openOnboarding();
 }
 
-function showOnboarding() {
-  document.getElementById('onboarding-overlay').classList.remove('hidden');
+function openOnboarding() {
+  const overlay = document.getElementById('onboarding-overlay');
+  overlay.classList.remove('hidden');
 
-  // Wire niche buttons
+  // Reflect currently saved niches
   document.querySelectorAll('.niche-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      btn.classList.toggle('selected');
-    });
+    btn.classList.toggle('selected', S.niches.includes(btn.dataset.niche));
+    btn.addEventListener('click', () => btn.classList.toggle('selected'), { once: false });
   });
 
-  document.getElementById('onboarding-confirm').addEventListener('click', confirmOnboarding);
+  // Confirm
+  const confirmBtn = document.getElementById('onboarding-confirm');
+  const skipBtn    = document.getElementById('onboarding-skip');
+
+  const confirm = () => {
+    const chosen = [...document.querySelectorAll('.niche-btn.selected')]
+      .map(b => b.dataset.niche);
+    S.niches = chosen;
+    localStorage.setItem('vs_niches', JSON.stringify(chosen));
+    overlay.classList.add('hidden');
+    renderNiches();
+  };
+
+  const skip = () => overlay.classList.add('hidden');
+
+  // Clone to avoid stacking listeners
+  replaceWithClone(confirmBtn, confirm);
+  replaceWithClone(skipBtn, skip);
 }
 
-function confirmOnboarding() {
-  const selected = [...document.querySelectorAll('.niche-btn.selected')]
-    .map(btn => btn.dataset.niche);
+function replaceWithClone(el, handler) {
+  const clone = el.cloneNode(true);
+  el.parentNode.replaceChild(clone, el);
+  clone.addEventListener('click', handler);
+}
 
-  if (selected.length === 0) {
-    // Allow skipping — just close
-    document.getElementById('onboarding-overlay').classList.add('hidden');
-    return;
+function renderNiches() {
+  // Profile chip label
+  const preview = document.getElementById('home-niche-preview');
+  if (S.niches.length === 0) {
+    preview.textContent = 'Your niches';
+  } else if (S.niches.length <= 2) {
+    preview.textContent = S.niches.join(', ');
+  } else {
+    preview.textContent = `${S.niches.slice(0, 2).join(', ')} +${S.niches.length - 2}`;
   }
 
-  state.niches = selected;
-  localStorage.setItem('vs_niches', JSON.stringify(selected));
-  document.getElementById('onboarding-overlay').classList.add('hidden');
-  renderProfileTags();
-}
-
-function renderProfileTags() {
-  const container = document.getElementById('profile-tags');
-  container.innerHTML = '';
-  state.niches.forEach(n => {
+  // Profile drawer tags
+  const tagsEl = document.getElementById('profile-tags-home');
+  tagsEl.innerHTML = '';
+  if (S.niches.length === 0) {
+    tagsEl.innerHTML = '<span style="font-size:13px;color:var(--text-dim)">No niches selected</span>';
+    return;
+  }
+  S.niches.forEach(n => {
     const span = document.createElement('span');
     span.className = 'profile-tag';
     span.textContent = n;
-    container.appendChild(span);
+    tagsEl.appendChild(span);
   });
 }
 
-// ── PROFILE PANEL ──────────────────────────────────────────────
+// ── PROFILE CHIP & DRAWER ──────────────────────────────────────
 function initProfile() {
-  const btn   = document.getElementById('profile-btn');
-  const panel = document.getElementById('profile-panel');
-  const edit  = document.getElementById('edit-profile-btn');
+  const chip   = document.getElementById('profile-chip-home');
+  const drawer = document.getElementById('profile-drawer');
+  const edit   = document.getElementById('edit-niches-btn');
 
-  btn.addEventListener('click', () => {
-    panel.classList.toggle('hidden');
+  chip.addEventListener('click', e => {
+    e.stopPropagation();
+    drawer.classList.toggle('hidden');
   });
+
+  document.addEventListener('click', () => drawer.classList.add('hidden'));
+  drawer.addEventListener('click', e => e.stopPropagation());
 
   edit.addEventListener('click', () => {
-    panel.classList.add('hidden');
-    // Reset selections to current saved niches
-    document.querySelectorAll('.niche-btn').forEach(b => {
-      b.classList.toggle('selected', state.niches.includes(b.dataset.niche));
-    });
-    document.getElementById('onboarding-overlay').classList.remove('hidden');
-    // Re-bind confirm (remove old listener first)
-    const confirmBtn = document.getElementById('onboarding-confirm');
-    const newBtn = confirmBtn.cloneNode(true);
-    confirmBtn.parentNode.replaceChild(newBtn, confirmBtn);
-    newBtn.addEventListener('click', confirmOnboarding);
+    drawer.classList.add('hidden');
+    openOnboarding();
   });
 }
 
-// ── TABS ───────────────────────────────────────────────────────
-function initTabs() {
-  document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const tab = btn.dataset.tab;
-      if (tab === state.activeTab) return;
-
-      // Update buttons
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-
-      // Update sections
-      document.querySelectorAll('.tab-section').forEach(s => s.classList.add('hidden'));
-      const section = document.getElementById(`tab-${tab}`);
-      section.classList.remove('hidden');
-
-      state.activeTab = tab;
-    });
-  });
-}
-
-// ── TONE SELECTORS ─────────────────────────────────────────────
-function initToneSelectors() {
-  // YouTube tones
-  document.querySelectorAll('#yt-tone-selector .tone-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('#yt-tone-selector .tone-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      state.ytTone = btn.dataset.tone;
-    });
-  });
-
-  // Instagram tones
-  document.querySelectorAll('#ig-tone-selector .tone-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('#ig-tone-selector .tone-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      state.igTone = btn.dataset.tone;
-    });
-  });
-
-  // Posting time platform
-  document.querySelectorAll('#pt-platform-selector .tone-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('#pt-platform-selector .tone-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      state.ptPlatform = btn.dataset.platform;
+// ── PILL SELECTORS ─────────────────────────────────────────────
+function initPills(groupId, stateKey) {
+  document.querySelectorAll(`#${groupId} .pill`).forEach(pill => {
+    pill.addEventListener('click', () => {
+      document.querySelectorAll(`#${groupId} .pill`).forEach(p => p.classList.remove('active'));
+      pill.classList.add('active');
+      S[stateKey] = pill.dataset.tone || pill.dataset.platform;
     });
   });
 }
@@ -151,9 +149,9 @@ function initToneSelectors() {
 // ── API CALL ───────────────────────────────────────────────────
 async function callAPI(endpoint, payload) {
   const res = await fetch(`/.netlify/functions/${endpoint}`, {
-    method: 'POST',
+    method:  'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
+    body:    JSON.stringify(payload),
   });
 
   if (!res.ok) {
@@ -164,210 +162,170 @@ async function callAPI(endpoint, payload) {
   return res.json();
 }
 
-// ── SKELETON HELPERS ───────────────────────────────────────────
-function showSkeleton(id) {
-  document.getElementById(id).classList.remove('hidden');
-}
-function hideSkeleton(id) {
-  document.getElementById(id).classList.add('hidden');
-}
-function showOutput(id) {
-  document.getElementById(id).classList.remove('hidden');
-}
-function hideOutput(id) {
-  document.getElementById(id).classList.add('hidden');
+// ── SKELETON / OUTPUT HELPERS ───────────────────────────────────
+const show = id => document.getElementById(id).classList.remove('hidden');
+const hide = id => document.getElementById(id).classList.add('hidden');
+
+function setText(id, val) {
+  document.getElementById(id).textContent = val || '';
 }
 
-// ── CHAR COUNT ─────────────────────────────────────────────────
-function updateCharCount(textId, countId, limit) {
-  const text  = document.getElementById(textId).textContent.trim();
-  const count = text.length;
-  const el    = document.getElementById(countId);
-  el.textContent = `${count.toLocaleString()} / ${limit.toLocaleString()}`;
-  el.classList.toggle('over', count > limit);
+function setCharBadge(badgeId, text, limit) {
+  const el = document.getElementById(badgeId);
+  if (!el) return;
+  const len = (text || '').length;
+  el.textContent = `${len.toLocaleString()} / ${limit.toLocaleString()}`;
+  el.classList.toggle('over', len > limit);
 }
 
 // ── YOUTUBE ────────────────────────────────────────────────────
 function initYouTube() {
-  const generateBtn = document.getElementById('yt-generate-btn');
-  const regenBtn    = document.getElementById('yt-regen-btn');
-
-  generateBtn.addEventListener('click', () => runYouTube(false));
-  regenBtn.addEventListener('click',    () => runYouTube(true));
+  document.getElementById('yt-generate-btn').addEventListener('click', () => runYT());
+  document.getElementById('yt-regen').addEventListener('click', () => runYT());
 }
 
-async function runYouTube(isRegen) {
-  const desc = document.getElementById('yt-description').value.trim();
-  if (!desc) { showToast('Please enter a video description.'); return; }
+async function runYT() {
+  const input = document.getElementById('yt-input').value.trim();
+  if (!input) { showToast('Please describe your video first.'); return; }
 
-  const keywords = document.getElementById('yt-keywords').value.trim();
-  const payload  = {
-    description: desc,
-    tone: state.ytTone,
-    keywords,
-    niches: state.niches,
-  };
-
-  state.lastYtPayload = payload;
-
-  hideOutput('yt-output');
-  showSkeleton('yt-skeleton');
+  hide('yt-output');
+  show('yt-skeleton');
 
   try {
-    const data = await callAPI('youtube', payload);
-    hideSkeleton('yt-skeleton');
+    const data = await callAPI('youtube', {
+      description: input,
+      tone:        S.ytTone,
+      niches:      S.niches,
+    });
 
-    setText('yt-desc-text',     data.description || '');
-    setText('yt-tags-text',     data.tags        || '');
-    setText('yt-hashtags-text', data.hashtags    || '');
-
-    updateCharCount('yt-desc-text',  'yt-desc-count',  5000);
-    updateCharCount('yt-tags-text',  'yt-tags-count',  500);
-
-    showOutput('yt-output');
+    hide('yt-skeleton');
+    setText('yt-desc',     data.description);
+    setText('yt-tags',     data.tags);
+    setText('yt-hashtags', data.hashtags);
+    setCharBadge('yt-desc-badge',  data.description, 5000);
+    setCharBadge('yt-tags-badge',  data.tags,         500);
+    show('yt-output');
+    scrollToOutput('yt-output');
   } catch (err) {
-    hideSkeleton('yt-skeleton');
+    hide('yt-skeleton');
     showToast(`Error: ${err.message}`);
   }
 }
 
 // ── INSTAGRAM ──────────────────────────────────────────────────
 function initInstagram() {
-  document.getElementById('ig-generate-btn').addEventListener('click', () => runInstagram(false));
-  document.getElementById('ig-regen-btn').addEventListener('click',    () => runInstagram(true));
+  document.getElementById('ig-generate-btn').addEventListener('click', () => runIG());
+  document.getElementById('ig-regen').addEventListener('click', () => runIG());
 }
 
-async function runInstagram(isRegen) {
-  const desc = document.getElementById('ig-description').value.trim();
-  if (!desc) { showToast('Please enter a post description.'); return; }
+async function runIG() {
+  const input = document.getElementById('ig-input').value.trim();
+  if (!input) { showToast('Please describe your post first.'); return; }
 
-  const payload = {
-    description: desc,
-    tone: state.igTone,
-    niches: state.niches,
-  };
-
-  state.lastIgPayload = payload;
-
-  hideOutput('ig-output');
-  showSkeleton('ig-skeleton');
+  hide('ig-output');
+  show('ig-skeleton');
 
   try {
-    const data = await callAPI('instagram', payload);
-    hideSkeleton('ig-skeleton');
+    const data = await callAPI('instagram', {
+      description: input,
+      tone:        S.igTone,
+      niches:      S.niches,
+    });
 
-    setText('ig-caption-text',  data.caption  || '');
-    setText('ig-hashtags-text', data.hashtags || '');
-    setText('ig-keywords-text', data.keywords || '');
-
-    showOutput('ig-output');
+    hide('ig-skeleton');
+    setText('ig-caption',  data.caption);
+    setText('ig-hashtags', data.hashtags);
+    setText('ig-keywords', data.keywords);
+    show('ig-output');
+    scrollToOutput('ig-output');
   } catch (err) {
-    hideSkeleton('ig-skeleton');
+    hide('ig-skeleton');
     showToast(`Error: ${err.message}`);
   }
 }
 
 // ── POSTING TIME ───────────────────────────────────────────────
 function initPostingTime() {
-  document.getElementById('pt-generate-btn').addEventListener('click', () => runPostingTime(false));
-  document.getElementById('pt-regen-btn').addEventListener('click',    () => runPostingTime(true));
+  document.getElementById('pt-generate-btn').addEventListener('click', () => runPT());
+  document.getElementById('pt-regen').addEventListener('click', () => runPT());
 }
 
-async function runPostingTime(isRegen) {
-  const region      = document.getElementById('pt-region').value;
-  const contentType = document.getElementById('pt-content-type').value.trim();
+async function runPT() {
+  const region = document.getElementById('pt-region').value;
 
-  const payload = {
-    platform: state.ptPlatform,
-    region,
-    contentType,
-    niches: state.niches,
-  };
-
-  state.lastPtPayload = payload;
-
-  hideOutput('pt-output');
-  showSkeleton('pt-skeleton');
+  hide('pt-output');
+  show('pt-skeleton');
 
   try {
-    const data = await callAPI('posting-time', payload);
-    hideSkeleton('pt-skeleton');
+    const data = await callAPI('posting-time', {
+      platform: S.ptPlatform,
+      region,
+      niches:   S.niches,
+    });
 
-    setText('pt-slots-text', data.timeSlots    || '');
-    setText('pt-notes-text', data.strategyNotes || '');
-
-    showOutput('pt-output');
+    hide('pt-skeleton');
+    setText('pt-slots', data.timeSlots);
+    setText('pt-notes', data.strategyNotes);
+    show('pt-output');
+    scrollToOutput('pt-output');
   } catch (err) {
-    hideSkeleton('pt-skeleton');
+    hide('pt-skeleton');
     showToast(`Error: ${err.message}`);
   }
 }
 
 // ── COPY ───────────────────────────────────────────────────────
-function initCopyButtons() {
+function initCopy() {
   document.addEventListener('click', e => {
     const btn = e.target.closest('.copy-btn');
     if (!btn) return;
 
-    const targetId = btn.dataset.target;
-    const el = document.getElementById(targetId);
+    const el = document.getElementById(btn.dataset.target);
     if (!el) return;
 
-    const text = el.textContent.trim();
-    navigator.clipboard.writeText(text).then(() => {
-      btn.classList.add('copied');
+    navigator.clipboard.writeText(el.textContent.trim()).then(() => {
       btn.textContent = '✓ Copied';
+      btn.classList.add('copied');
       showToast('Copied to clipboard');
       setTimeout(() => {
+        btn.textContent = 'Copy';
         btn.classList.remove('copied');
-        btn.textContent = btn.textContent.replace('✓ Copied', getOriginalCopyLabel(targetId));
       }, 2000);
-    });
+    }).catch(() => showToast('Could not copy. Please try manually.'));
   });
 }
 
-function getOriginalCopyLabel(id) {
-  const map = {
-    'yt-desc-text':     'Copy Description',
-    'yt-tags-text':     'Copy Tags',
-    'yt-hashtags-text': 'Copy Hashtags',
-    'ig-caption-text':  'Copy Caption',
-    'ig-hashtags-text': 'Copy Hashtags',
-    'ig-keywords-text': 'Copy Keywords',
-    'pt-slots-text':    'Copy Time Slots',
-    'pt-notes-text':    'Copy Notes',
-  };
-  return map[id] || 'Copy';
-}
-
 // ── TOAST ──────────────────────────────────────────────────────
-let toastTimer;
+let _toastTimer;
 function showToast(msg) {
-  const toast = document.getElementById('toast');
-  toast.textContent = msg;
-  toast.classList.remove('hidden');
-  requestAnimationFrame(() => toast.classList.add('show'));
-
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => {
-    toast.classList.remove('show');
-    setTimeout(() => toast.classList.add('hidden'), 200);
-  }, 2200);
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.remove('hidden');
+  requestAnimationFrame(() => el.classList.add('show'));
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => {
+    el.classList.remove('show');
+    setTimeout(() => el.classList.add('hidden'), 220);
+  }, 2400);
 }
 
 // ── HELPERS ────────────────────────────────────────────────────
-function setText(id, value) {
-  document.getElementById(id).textContent = value;
+function scrollToOutput(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
 }
 
 // ── INIT ───────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   initOnboarding();
   initProfile();
-  initTabs();
-  initToneSelectors();
+  initRouter();
+  initPills('yt-tone-group',      'ytTone');
+  initPills('ig-tone-group',      'igTone');
+  initPills('pt-platform-group',  'ptPlatform');
   initYouTube();
   initInstagram();
   initPostingTime();
-  initCopyButtons();
+  initCopy();
 });
