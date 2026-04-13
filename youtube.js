@@ -1,8 +1,15 @@
 // netlify/functions/youtube.js
 // Generates YouTube description, tags, and hashtags via Gemini API
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_MODEL   = 'gemini-2.5-flash-preview-04-17'; // update to latest stable when available
+const response = await fetch('/.netlify/functions/gemini', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({ prompt })
+});
+
+const data = await response.json();
 
 exports.handler = async function (event) {
   if (event.httpMethod !== 'POST') {
